@@ -121,14 +121,14 @@ export function createWorld(rng) {
 
       // Auto-turret defense: Sanctum gate zaps critical near monsters
       this.turretTimer += dt;
-      if (this.turretTimer >= 1.2 && this.monsters.length > 0) {
-        const dangerMonster = this.monsters.find(m => m.y >= SANCTUM_GATE_Y - 90 && !m.dead);
+      if (this.turretTimer >= 1.5 && this.monsters.length > 0) {
+        const dangerMonster = this.monsters.find(m => m.y >= SANCTUM_GATE_Y - 80 && !m.dead);
         if (dangerMonster) {
           this.turretTimer = 0;
           this.particles.spawnLaserBeam(dangerMonster.x, SANCTUM_GATE_Y, dangerMonster.x, dangerMonster.y, '#00d2ff');
-          const killed = applyMonsterDamage(dangerMonster, 30);
+          const killed = applyMonsterDamage(dangerMonster, 20);
           playHitSound();
-          this.particles.addFloatingText(dangerMonster.x, dangerMonster.y - 10, 'ZAP! 30', '#00d2ff', 16, false);
+          this.particles.addFloatingText(dangerMonster.x, dangerMonster.y - 10, 'ZAP! 20', '#00d2ff', 16, false);
           if (killed) {
             this.stats.monstersSlain++;
             this.score += dangerMonster.score;
@@ -223,7 +223,7 @@ export function createWorld(rng) {
 
       // 2. PASSIVE GEM DARTS: Every placed piece actively shoots energy darts at monsters!
       if (this.monsters.length > 0) {
-        const gemDamage = 18 * placedCells.length;
+        const gemDamage = 8 * placedCells.length;
         // Target foremost monster (closest to gate)
         const target = [...this.monsters].sort((a, b) => b.y - a.y)[0];
         if (target) {

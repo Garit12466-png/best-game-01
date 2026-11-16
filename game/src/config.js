@@ -11,7 +11,7 @@ export const SCREEN_VICTORY = 'victory';
 
 export const BEST_SCORE_KEY = 'monsterweave_best_score';
 export const INITIAL_LIVES = 5;
-export const INITIAL_SHIELD = 60;
+export const INITIAL_SHIELD = 50;
 
 // Grid layout: 8x8 Block Blast matrix on right side
 export const GRID_COLS = 8;
@@ -49,8 +49,8 @@ export const MONSTER_TYPES = {
   BEETLE: {
     id: 'beetle',
     name: 'Grave Beetle',
-    maxHp: 50,
-    speed: 34,       // Golden middle speed
+    maxHp: 60,
+    speed: 36,       // Golden middle speed (fair, not lethargic)
     score: 150,
     radius: 20,
     color: '#ff6600',
@@ -59,8 +59,8 @@ export const MONSTER_TYPES = {
   GARGOYLE: {
     id: 'gargoyle',
     name: 'Dusk Gargoyle',
-    maxHp: 125,
-    speed: 28,       // Golden middle speed
+    maxHp: 135,
+    speed: 30,       // Golden middle speed
     score: 350,
     radius: 26,
     color: '#a855f7',
@@ -69,8 +69,8 @@ export const MONSTER_TYPES = {
   GOLEM: {
     id: 'golem',
     name: 'Runic Golem',
-    maxHp: 320,
-    speed: 20,       // Golden middle speed
+    maxHp: 340,
+    speed: 22,       // Golden middle speed
     score: 800,
     radius: 34,
     color: '#38bdf8',
@@ -79,8 +79,8 @@ export const MONSTER_TYPES = {
   TITAN: {
     id: 'titan',
     name: 'The Dread Titan',
-    maxHp: 1400,     // Boss HP
-    speed: 13,       // Menacing boss march
+    maxHp: 1500,     // Boss HP
+    speed: 14,       // Menacing boss march
     score: 5000,
     radius: 54,
     isBoss: true,

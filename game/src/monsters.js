@@ -25,7 +25,7 @@ export function createMonster(typeKey, laneIndex, wave = 1) {
     isBoss: !!base.isBoss,
     laneIndex: laneIndex,
     x: laneX,
-    y: ARENA_Y - 45 - Math.random() * 40,
+    y: ARENA_Y - 20 - Math.random() * 10,
     wobbleOffset: Math.random() * Math.PI * 2,
     animTimer: Math.random() * 10,
     slowTimer: 0,
@@ -86,8 +86,8 @@ export function generateWaveQueue(waveNumber, spawnMultiplier = 1.0) {
   const queue = [];
   const wave = waveNumber;
 
-  // Prompt start delay: 1.0s
-  let currentTime = 1.0;
+  // Prompt start delay: 0.35s (monsters enter the battlefield right away!)
+  let currentTime = 0.35;
 
   if (wave % 5 === 0) {
     // Boss Wave! (Wave 5 & 10)
@@ -113,7 +113,7 @@ export function generateWaveQueue(waveNumber, spawnMultiplier = 1.0) {
         lane: i % 3,
         delay: currentTime
       });
-      currentTime += 1.6; // Crisp 1.6s between spawns!
+      currentTime += 1.8; // Steady, balanced 1.8s between spawns
     }
     return queue;
   }
