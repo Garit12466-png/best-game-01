@@ -86,41 +86,41 @@ export function generateWaveQueue(waveNumber, spawnMultiplier = 1.0) {
   const queue = [];
   const wave = waveNumber;
 
-  // 3.5s breathing delay before first wave spawns
-  let currentTime = 3.5;
+  // Prompt start delay: 1.0s
+  let currentTime = 1.0;
 
   if (wave % 5 === 0) {
     // Boss Wave! (Wave 5 & 10)
     queue.push({ type: 'TITAN', lane: 1, delay: currentTime });
-    currentTime += 4.0;
+    currentTime += 2.5;
 
     const adds = 4 + wave;
     for (let i = 0; i < adds; i++) {
       queue.push({
         type: i % 2 === 0 ? 'BEETLE' : 'GARGOYLE',
         lane: i % 3,
-        delay: currentTime + i * 2.5
+        delay: currentTime + i * 1.8
       });
     }
     return queue;
   }
 
-  // Wave 1: Gentle tutorial wave of only 4 beetles spaced widely
+  // Wave 1: Engaging start with 5 beetles entering promptly
   if (wave === 1) {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       queue.push({
         type: 'BEETLE',
         lane: i % 3,
         delay: currentTime
       });
-      currentTime += 3.2; // Generous 3.2s between spawns!
+      currentTime += 1.6; // Crisp 1.6s between spawns!
     }
     return queue;
   }
 
   // Wave 2+: Gradually scale
-  const beetleCount = Math.floor((4 + wave * 1.5) * spawnMultiplier);
-  const gargoyleCount = Math.floor((wave >= 2 ? wave : 0) * spawnMultiplier);
+  const beetleCount = Math.floor((5 + wave * 1.5) * spawnMultiplier);
+  const gargoyleCount = Math.floor((wave >= 2 ? wave + 1 : 0) * spawnMultiplier);
   const golemCount = Math.floor((wave >= 3 ? Math.floor(wave / 2) : 0) * spawnMultiplier);
 
   // Spawn beetles
@@ -130,7 +130,7 @@ export function generateWaveQueue(waveNumber, spawnMultiplier = 1.0) {
       lane: i % 3,
       delay: currentTime
     });
-    currentTime += 2.2 + Math.random() * 0.8;
+    currentTime += 1.5 + Math.random() * 0.5;
   }
 
   // Spawn gargoyles
@@ -140,7 +140,7 @@ export function generateWaveQueue(waveNumber, spawnMultiplier = 1.0) {
       lane: (i + 1) % 3,
       delay: currentTime
     });
-    currentTime += 2.8;
+    currentTime += 2.0;
   }
 
   // Spawn golems
@@ -150,7 +150,7 @@ export function generateWaveQueue(waveNumber, spawnMultiplier = 1.0) {
       lane: i % 3,
       delay: currentTime
     });
-    currentTime += 3.5;
+    currentTime += 2.6;
   }
 
   queue.sort((a, b) => a.delay - b.delay);

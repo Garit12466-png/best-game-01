@@ -10,8 +10,8 @@ export const SCREEN_OVER = 'over';
 export const SCREEN_VICTORY = 'victory';
 
 export const BEST_SCORE_KEY = 'monsterweave_best_score';
-export const INITIAL_LIVES = 6;
-export const INITIAL_SHIELD = 100;
+export const INITIAL_LIVES = 5;
+export const INITIAL_SHIELD = 60;
 
 // Grid layout: 8x8 Block Blast matrix on right side
 export const GRID_COLS = 8;
@@ -44,13 +44,13 @@ export const GEM_TYPES = [
   { id: 'amethyst', name: 'Void Lance', color: '#b347ff', glow: 'rgba(179, 71, 255, 0.65)', light: '#e1b3ff', dark: '#52008f', icon: '✹' }
 ];
 
-// Balanced Monster Stats (generous reaction time for a fun, fair experience)
+// Balanced Monster Stats (The Golden Middle: engaging, responsive, fair)
 export const MONSTER_TYPES = {
   BEETLE: {
     id: 'beetle',
     name: 'Grave Beetle',
-    maxHp: 45,
-    speed: 24,       // Slowed down from 55 to 24 for relaxed, fun tactical play
+    maxHp: 50,
+    speed: 34,       // Golden middle speed
     score: 150,
     radius: 20,
     color: '#ff6600',
@@ -59,8 +59,8 @@ export const MONSTER_TYPES = {
   GARGOYLE: {
     id: 'gargoyle',
     name: 'Dusk Gargoyle',
-    maxHp: 110,
-    speed: 20,       // Slowed from 40 to 20
+    maxHp: 125,
+    speed: 28,       // Golden middle speed
     score: 350,
     radius: 26,
     color: '#a855f7',
@@ -69,8 +69,8 @@ export const MONSTER_TYPES = {
   GOLEM: {
     id: 'golem',
     name: 'Runic Golem',
-    maxHp: 280,
-    speed: 15,       // Slowed from 25 to 15
+    maxHp: 320,
+    speed: 20,       // Golden middle speed
     score: 800,
     radius: 34,
     color: '#38bdf8',
@@ -79,8 +79,8 @@ export const MONSTER_TYPES = {
   TITAN: {
     id: 'titan',
     name: 'The Dread Titan',
-    maxHp: 1200,     // Adjusted boss HP
-    speed: 10,       // Majestic, slow, ominous march
+    maxHp: 1400,     // Boss HP
+    speed: 13,       // Menacing boss march
     score: 5000,
     radius: 54,
     isBoss: true,

@@ -478,7 +478,7 @@ export class GameRenderer {
 
   drawHexagon(ctx, x, y, radius) {
     ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 5; i++) {
       const angle = (Math.PI / 3) * i;
       const hx = x + radius * Math.cos(angle);
       const hy = y + radius * Math.sin(angle);
@@ -715,7 +715,7 @@ export class GameRenderer {
     ctx.textBaseline = 'middle';
     ctx.fillText('SANCTUM:', 25, 34);
 
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 5; i++) {
       ctx.font = '24px sans-serif';
       if (i < world.lives) {
         ctx.fillStyle = '#f43f5e';

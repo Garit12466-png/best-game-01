@@ -9,8 +9,8 @@ import { createMonster } from './monsters.js';
 export function stageSceneForScreenshot(shotName, world) {
   if (shotName === 'start') {
     world.score = 0;
-    world.lives = 6;
-    world.shield = 100;
+    world.lives = 5;
+    world.shield = 60;
     return {
       screen: SCREEN_TITLE,
       best: 95200
@@ -19,8 +19,8 @@ export function stageSceneForScreenshot(shotName, world) {
 
   if (shotName === 'play') {
     world.score = 46121;
-    world.lives = 6;
-    world.shield = 100;
+    world.lives = 5;
+    world.shield = 60;
     world.wave = 3;
     world.combo = 2;
 
@@ -59,8 +59,8 @@ export function stageSceneForScreenshot(shotName, world) {
 
   if (shotName === 'blast') {
     world.score = 72400;
-    world.lives = 6;
-    world.shield = 85;
+    world.lives = 5;
+    world.shield = 50;
     world.wave = 5; // Boss Wave
     world.combo = 3;
 
