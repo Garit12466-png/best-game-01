@@ -1,4 +1,4 @@
-// MONSTERWEAVE — Canvas 2D Renderer: Block Blast Aesthetics, Dark Fantasy Monsters & Tactical HUD
+// MONSTERWEAVE — High-End Canvas 2D Renderer: Procedural Fantasy Sprites, Block Blast Jewel Facets & Atmospheric Visuals
 
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
@@ -14,34 +14,48 @@ export class GameRenderer {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
+    this.ambientTime = 0;
+    this.embers = [];
+    for (let i = 0; i < 35; i++) {
+      this.embers.push({
+        x: Math.random() * CANVAS_WIDTH,
+        y: Math.random() * CANVAS_HEIGHT,
+        vy: -0.3 - Math.random() * 0.7,
+        vx: (Math.random() - 0.5) * 0.4,
+        size: 1.2 + Math.random() * 2.2,
+        alpha: 0.15 + Math.random() * 0.4,
+        color: Math.random() > 0.4 ? '#ff9933' : '#00d2ff'
+      });
+    }
   }
 
   draw(world, screenState, inputManager, bestScore = 0) {
     const ctx = this.ctx;
+    this.ambientTime += 0.025;
     const shake = world.particles.getShakeOffset();
 
     ctx.save();
     ctx.translate(shake.x, shake.y);
 
-    // 1. Master Background
+    // 1. Master Background & Ambient Embers
     this.drawBackground(ctx);
 
-    // 2. Left Battlefield: The Dread Path
+    // 2. Left Battlefield: The Dread Path & Monsters
     this.drawBattlefield(ctx, world);
 
-    // 3. Right Matrix: 8x8 Tactical Block Blast Grid
+    // 3. Right Matrix: 8x8 Tactical Jewel Grid
     this.drawBlockMatrix(ctx, world, inputManager);
 
-    // 4. Tray of 3 Polyomino Pieces
+    // 4. Tray of 3 Pieces
     this.drawPieceTray(ctx, world, inputManager);
 
-    // 5. Laser beams, particles, and floating damage numbers
+    // 5. Beams, explosions, floating numbers
     world.particles.draw(ctx);
 
-    // 6. Top Header Bar & HUD
+    // 6. Top Header HUD
     this.drawHeaderHud(ctx, world, bestScore);
 
-    // 7. Dragged Piece Overlay (draw directly under mouse cursor)
+    // 7. Dragged Piece Overlay
     if (inputManager && inputManager.draggedPieceIndex >= 0) {
       this.drawDraggedPiece(ctx, world, inputManager);
     }
@@ -61,220 +75,404 @@ export class GameRenderer {
   }
 
   drawBackground(ctx) {
-    // Deep dark slate gradient
-    const bgGrad = ctx.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    bgGrad.addColorStop(0, '#0c1017');
-    bgGrad.addColorStop(0.5, '#090d12');
-    bgGrad.addColorStop(1, '#05070a');
+    // Rich dark fantasy slate gradient
+    const bgGrad = ctx.createRadialGradient(
+      CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 80,
+      CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_WIDTH * 0.75
+    );
+    bgGrad.addColorStop(0, '#131924');
+    bgGrad.addColorStop(0.6, '#0a0d14');
+    bgGrad.addColorStop(1, '#040608');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Subtle tactical grid background pattern
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+    // Subtle ambient grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
     ctx.lineWidth = 1;
-    for (let x = 0; x < CANVAS_WIDTH; x += 40) {
+    for (let x = 0; x < CANVAS_WIDTH; x += 48) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, CANVAS_HEIGHT);
       ctx.stroke();
     }
-    for (let y = 0; y < CANVAS_HEIGHT; y += 40) {
+
+    // Floating ambient embers
+    for (const e of this.embers) {
+      e.y += e.vy;
+      e.x += e.vx + Math.sin(this.ambientTime + e.y * 0.01) * 0.2;
+      if (e.y < -10) {
+        e.y = CANVAS_HEIGHT + 10;
+        e.x = Math.random() * CANVAS_WIDTH;
+      }
+      ctx.fillStyle = e.color;
+      ctx.globalAlpha = e.alpha;
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(CANVAS_WIDTH, y);
-      ctx.stroke();
+      ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.globalAlpha = 1.0;
   }
 
   drawBattlefield(ctx, world) {
     ctx.save();
 
-    // Dark stone road container
-    ctx.fillStyle = '#10141d';
-    ctx.strokeStyle = '#1f2633';
-    ctx.lineWidth = 2;
-    this.roundRect(ctx, ARENA_X, ARENA_Y, ARENA_WIDTH, ARENA_HEIGHT, 12, true, true);
+    // Dark cobblestone fortress road
+    const roadGrad = ctx.createLinearGradient(ARENA_X, ARENA_Y, ARENA_X + ARENA_WIDTH, ARENA_Y);
+    roadGrad.addColorStop(0, '#111722');
+    roadGrad.addColorStop(0.5, '#171e2c');
+    roadGrad.addColorStop(1, '#111722');
+    ctx.fillStyle = roadGrad;
+    ctx.strokeStyle = '#273449';
+    ctx.lineWidth = 3;
+    this.roundRect(ctx, ARENA_X, ARENA_Y, ARENA_WIDTH, ARENA_HEIGHT, 14, true, true);
 
-    // Decorative rune lane dividers
-    ctx.strokeStyle = 'rgba(0, 210, 255, 0.08)';
-    ctx.setLineDash([8, 8]);
+    // Stone block cobbles pattern
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.lineWidth = 1;
+    for (let y = ARENA_Y + 30; y < SANCTUM_GATE_Y; y += 45) {
+      ctx.beginPath();
+      ctx.moveTo(ARENA_X + 15, y);
+      ctx.lineTo(ARENA_X + ARENA_WIDTH - 15, y);
+      ctx.stroke();
+    }
+
+    // 3 Tactical Lane dividers with glowing arcane runes
+    ctx.strokeStyle = 'rgba(0, 210, 255, 0.12)';
+    ctx.setLineDash([12, 10]);
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(ARENA_X + 200, ARENA_Y + 10);
-    ctx.lineTo(ARENA_X + 200, ARENA_Y + ARENA_HEIGHT - 10);
-    ctx.moveTo(ARENA_X + 380, ARENA_Y + 10);
-    ctx.lineTo(ARENA_X + 380, ARENA_Y + ARENA_HEIGHT - 10);
+    ctx.moveTo(ARENA_X + 195, ARENA_Y + 15);
+    ctx.lineTo(ARENA_X + 195, SANCTUM_GATE_Y - 5);
+    ctx.moveTo(ARENA_X + 385, ARENA_Y + 15);
+    ctx.lineTo(ARENA_X + 385, SANCTUM_GATE_Y - 5);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Lane labels at top
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('LANE 1 (WEST)', LANES[0], ARENA_Y + 22);
-    ctx.fillText('LANE 2 (CENTRAL)', LANES[1], ARENA_Y + 22);
-    ctx.fillText('LANE 3 (EAST)', LANES[2], ARENA_Y + 22);
-
-    // Sanctum Gate Barrier at the bottom
-    const gateGrad = ctx.createLinearGradient(ARENA_X, SANCTUM_GATE_Y - 20, ARENA_X, SANCTUM_GATE_Y + 40);
-    gateGrad.addColorStop(0, 'rgba(0, 210, 255, 0.0)');
-    gateGrad.addColorStop(0.3, 'rgba(0, 210, 255, 0.25)');
-    gateGrad.addColorStop(1, 'rgba(0, 150, 255, 0.6)');
-    ctx.fillStyle = gateGrad;
-    ctx.fillRect(ARENA_X + 2, SANCTUM_GATE_Y - 10, ARENA_WIDTH - 4, 55);
-
-    // Glowing defense line
-    ctx.strokeStyle = '#00d2ff';
-    ctx.shadowColor = '#00d2ff';
-    ctx.shadowBlur = 12;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(ARENA_X + 4, SANCTUM_GATE_Y);
-    ctx.lineTo(ARENA_X + ARENA_WIDTH - 4, SANCTUM_GATE_Y);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // Defense Turrets on gate
-    LANES.forEach(lx => {
-      ctx.fillStyle = '#00e1d9';
-      ctx.beginPath();
-      ctx.arc(lx, SANCTUM_GATE_Y + 12, 10, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(lx, SANCTUM_GATE_Y + 12, 4, 0, Math.PI * 2);
-      ctx.fill();
+    // Lane header plaques
+    const laneNames = ['WEST APPROACH', 'ROYAL HIGHWAY', 'EAST APPROACH'];
+    LANES.forEach((lx, i) => {
+      ctx.fillStyle = 'rgba(0, 210, 255, 0.08)';
+      this.roundRect(ctx, lx - 70, ARENA_Y + 8, 140, 22, 6, true, false);
+      ctx.fillStyle = '#6ee7b7';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(laneNames[i], lx, ARENA_Y + 23);
     });
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('⚡ SANCTUM DEFENSE BARRIER ⚡', ARENA_X + ARENA_WIDTH / 2, SANCTUM_GATE_Y + 34);
+    // Flickering Torches on the battlefield walls
+    const torchFlicker = Math.sin(this.ambientTime * 8) * 3;
+    [ARENA_Y + 120, ARENA_Y + 280, ARENA_Y + 440].forEach(ty => {
+      // Left Torch
+      ctx.fillStyle = '#ff6600';
+      ctx.shadowColor = '#ff6600';
+      ctx.shadowBlur = 14 + torchFlicker;
+      ctx.beginPath();
+      ctx.arc(ARENA_X + 8, ty, 5, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Draw active monsters
+      // Right Torch
+      ctx.beginPath();
+      ctx.arc(ARENA_X + ARENA_WIDTH - 8, ty, 5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+
+    // Sanctum Castle Gate & Crystal Towers at bottom
+    this.drawSanctumFortress(ctx, world);
+
+    // Draw active animated monsters
     for (const m of world.monsters) {
-      this.drawMonster(ctx, m);
+      this.drawDetailedMonster(ctx, m);
     }
 
     ctx.restore();
   }
 
-  drawMonster(ctx, m) {
+  drawSanctumFortress(ctx, world) {
+    const gateY = SANCTUM_GATE_Y;
+
+    // Glowing energy barrier dome
+    const domePulse = Math.sin(this.ambientTime * 3) * 0.1;
+    const domeGrad = ctx.createLinearGradient(ARENA_X, gateY - 20, ARENA_X, gateY + 50);
+    domeGrad.addColorStop(0, `rgba(0, 210, 255, ${0.15 + domePulse})`);
+    domeGrad.addColorStop(0.7, 'rgba(0, 150, 255, 0.35)');
+    domeGrad.addColorStop(1, 'rgba(14, 116, 144, 0.85)');
+    ctx.fillStyle = domeGrad;
+    ctx.fillRect(ARENA_X + 3, gateY - 12, ARENA_WIDTH - 6, 68);
+
+    // Glowing electric gate beam
+    ctx.strokeStyle = '#38bdf8';
+    ctx.shadowColor = '#00d2ff';
+    ctx.shadowBlur = 16;
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(ARENA_X + 6, gateY);
+    ctx.lineTo(ARENA_X + ARENA_WIDTH - 6, gateY);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Twin Crystal Defense Pylons on left and right
+    [ARENA_X + 25, ARENA_X + ARENA_WIDTH - 25].forEach(px => {
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 2;
+      this.roundRect(ctx, px - 14, gateY - 8, 28, 48, 6, true, true);
+
+      // Glowing floating crystal
+      ctx.fillStyle = '#00f0ff';
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.moveTo(px, gateY - 22 + Math.sin(this.ambientTime * 4) * 3);
+      ctx.lineTo(px + 8, gateY - 12);
+      ctx.lineTo(px, gateY - 2);
+      ctx.lineTo(px - 8, gateY - 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    // Central Defense Badge & Shield Meter
+    const shieldRatio = world.shield / world.maxShield;
+    ctx.fillStyle = '#0f172a';
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 2;
+    this.roundRect(ctx, ARENA_X + ARENA_WIDTH / 2 - 130, gateY + 12, 260, 24, 6, true, true);
+
+    // Shield fill
+    ctx.fillStyle = '#0284c7';
+    this.roundRect(ctx, ARENA_X + ARENA_WIDTH / 2 - 128, gateY + 14, 256 * shieldRatio, 20, 4, true, false);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`🛡️ SANCTUM BARRIER: ${Math.round(world.shield)} / ${world.maxShield}`, ARENA_X + ARENA_WIDTH / 2, gateY + 28);
+  }
+
+  drawDetailedMonster(ctx, m) {
     ctx.save();
     ctx.translate(m.x, m.y);
 
-    // Aura glow
-    ctx.fillStyle = m.aura;
-    ctx.shadowColor = m.color;
-    ctx.shadowBlur = m.isBoss ? 25 : 12;
+    // Ground contact shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
     ctx.beginPath();
-    ctx.arc(0, 0, m.radius * 1.3, 0, Math.PI * 2);
+    ctx.ellipse(0, m.radius * 0.9, m.radius * 1.1, m.radius * 0.4, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // Flash hit effect
-    const bodyColor = m.flashTimer > 0 ? '#ffffff' : m.color;
+    const isFlashing = m.flashTimer > 0;
 
     if (m.type === 'beetle') {
-      // Crawling Beetle: oval segmented carapace with pincers
-      ctx.fillStyle = bodyColor;
+      // 1. Grave Beetle: Spiked carapace, articulated legs, pincers
+      const legCycle = Math.sin(m.animTimer * 2) * 5;
+
+      // 6 Spidery Legs
+      ctx.strokeStyle = isFlashing ? '#ffffff' : '#9a3412';
+      ctx.lineWidth = 2.5;
+      [-1, 1].forEach(side => {
+        // Front leg
+        ctx.beginPath();
+        ctx.moveTo(side * 8, -6);
+        ctx.lineTo(side * (m.radius + 6), -12 + legCycle);
+        ctx.lineTo(side * (m.radius + 10), -4 + legCycle);
+        ctx.stroke();
+
+        // Mid leg
+        ctx.beginPath();
+        ctx.moveTo(side * 10, 2);
+        ctx.lineTo(side * (m.radius + 8), 0 - legCycle);
+        ctx.lineTo(side * (m.radius + 12), 10 - legCycle);
+        ctx.stroke();
+
+        // Back leg
+        ctx.beginPath();
+        ctx.moveTo(side * 8, 10);
+        ctx.lineTo(side * (m.radius + 6), 16 + legCycle);
+        ctx.lineTo(side * (m.radius + 10), 22 + legCycle);
+        ctx.stroke();
+      });
+
+      // Carapace Body
+      const bGrad = ctx.createRadialGradient(-3, -4, 2, 0, 0, m.radius);
+      bGrad.addColorStop(0, isFlashing ? '#ffffff' : '#ea580c');
+      bGrad.addColorStop(0.7, isFlashing ? '#ffffff' : '#c2410c');
+      bGrad.addColorStop(1, isFlashing ? '#ffffff' : '#7c2d12');
+      ctx.fillStyle = bGrad;
       ctx.beginPath();
-      ctx.ellipse(0, 0, m.radius, m.radius * 1.25, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, m.radius, m.radius * 1.2, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Pincers
-      ctx.strokeStyle = '#ffa366';
-      ctx.lineWidth = 3;
+      // Glowing abdominal bioluminescent rune
+      ctx.fillStyle = '#fef08a';
       ctx.beginPath();
-      ctx.moveTo(-6, -m.radius * 1.2);
-      ctx.lineTo(-12, -m.radius * 1.6);
-      ctx.moveTo(6, -m.radius * 1.2);
-      ctx.lineTo(12, -m.radius * 1.6);
-      ctx.stroke();
-
-      // Glowing eyes
-      ctx.fillStyle = '#ffff00';
-      ctx.beginPath();
-      ctx.arc(-5, -m.radius * 0.7, 2.5, 0, Math.PI * 2);
-      ctx.arc(5, -m.radius * 0.7, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (m.type === 'gargoyle') {
-      // Dusk Gargoyle: Winged silhouette
-      ctx.fillStyle = bodyColor;
-      ctx.beginPath();
-      ctx.moveTo(0, -m.radius * 1.3);
-      ctx.lineTo(-m.radius * 1.5, m.radius * 0.5);
-      ctx.lineTo(-m.radius * 0.5, m.radius * 0.2);
-      ctx.lineTo(0, m.radius);
-      ctx.lineTo(m.radius * 0.5, m.radius * 0.2);
-      ctx.lineTo(m.radius * 1.5, m.radius * 0.5);
-      ctx.closePath();
+      ctx.ellipse(0, 4, 4, 7, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Horns
-      ctx.strokeStyle = '#d9b3ff';
+      // Spiked Mandibles
+      ctx.strokeStyle = '#fdba74';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(-4, -m.radius * 1.1);
-      ctx.lineTo(-8, -m.radius * 1.6);
-      ctx.moveTo(4, -m.radius * 1.1);
-      ctx.lineTo(8, -m.radius * 1.6);
+      ctx.moveTo(-5, -m.radius);
+      ctx.lineTo(-9, -m.radius - 8);
+      ctx.lineTo(-4, -m.radius - 10);
+      ctx.moveTo(5, -m.radius);
+      ctx.lineTo(9, -m.radius - 8);
+      ctx.lineTo(4, -m.radius - 10);
       ctx.stroke();
+
+      // Glowing red eyes
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(-5, -m.radius * 0.65, 2.5, 0, Math.PI * 2);
+      ctx.arc(5, -m.radius * 0.65, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+    } else if (m.type === 'gargoyle') {
+      // 2. Dusk Gargoyle: Animated spreading bat wings, stone horns
+      const wingFlap = Math.sin(m.animTimer * 2.5) * 0.25;
+
+      // Left & Right Bat Wings
+      ctx.fillStyle = isFlashing ? '#ffffff' : '#7e22ce';
+      ctx.strokeStyle = '#3b0764';
+      ctx.lineWidth = 2;
+
+      [-1, 1].forEach(dir => {
+        ctx.save();
+        ctx.scale(dir, 1);
+        ctx.rotate(wingFlap);
+        ctx.beginPath();
+        ctx.moveTo(4, -6);
+        ctx.lineTo(m.radius * 1.8, -m.radius * 1.2);
+        ctx.lineTo(m.radius * 1.2, 4);
+        ctx.lineTo(m.radius * 0.6, 2);
+        ctx.lineTo(2, 8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // Muscular Stone Torso
+      ctx.fillStyle = isFlashing ? '#ffffff' : '#581c87';
+      ctx.beginPath();
+      ctx.ellipse(0, 2, m.radius * 0.75, m.radius * 0.9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Demonic Horns
+      ctx.strokeStyle = '#d8b4fe';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-5, -m.radius * 0.7);
+      ctx.lineTo(-11, -m.radius * 1.4);
+      ctx.moveTo(5, -m.radius * 0.7);
+      ctx.lineTo(11, -m.radius * 1.4);
+      ctx.stroke();
+
+      // Glowing violet eyes
+      ctx.fillStyle = '#f43f5e';
+      ctx.beginPath();
+      ctx.arc(-4, -m.radius * 0.4, 3, 0, Math.PI * 2);
+      ctx.arc(4, -m.radius * 0.4, 3, 0, Math.PI * 2);
+      ctx.fill();
+
     } else if (m.type === 'golem') {
-      // Iron Golem: Chunky armored hexagon
-      ctx.fillStyle = bodyColor;
+      // 3. Runic Golem: Floating granite monolith boulders with electrical energy
+      const gGrad = ctx.createLinearGradient(-m.radius, -m.radius, m.radius, m.radius);
+      gGrad.addColorStop(0, isFlashing ? '#ffffff' : '#475569');
+      gGrad.addColorStop(0.5, isFlashing ? '#ffffff' : '#334155');
+      gGrad.addColorStop(1, isFlashing ? '#ffffff' : '#1e293b');
+      ctx.fillStyle = gGrad;
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 3;
+
+      // Solid stone hexagon torso
       this.drawHexagon(ctx, 0, 0, m.radius);
 
-      // Core visor glow
+      // Crackling Blue Runes in stone chest
+      ctx.strokeStyle = '#38bdf8';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 10;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, -m.radius * 0.6);
+      ctx.lineTo(-m.radius * 0.4, 0);
+      ctx.lineTo(0, m.radius * 0.6);
+      ctx.lineTo(m.radius * 0.4, 0);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Cyan visor slit
       ctx.fillStyle = '#00ffff';
-      ctx.fillRect(-m.radius * 0.6, -3, m.radius * 1.2, 6);
+      ctx.fillRect(-m.radius * 0.5, -4, m.radius, 7);
+
     } else if (m.type === 'titan') {
-      // The Dread Titan (Boss): Massive horned titan
-      ctx.fillStyle = bodyColor;
+      // 4. The Dread Titan (Boss): Enormous horned volcanic overlord
+      ctx.fillStyle = isFlashing ? '#ffffff' : '#991b1b';
       ctx.beginPath();
       ctx.arc(0, 0, m.radius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Volcanic magma chest cracks
-      ctx.strokeStyle = '#ffff00';
-      ctx.lineWidth = 4;
+      // Magma cracks on obsidian body
+      ctx.strokeStyle = '#f59e0b';
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 15;
+      ctx.lineWidth = 4.5;
       ctx.beginPath();
-      ctx.moveTo(-15, -10);
-      ctx.lineTo(0, 15);
-      ctx.lineTo(15, -10);
+      ctx.moveTo(-20, -15);
+      ctx.lineTo(0, 20);
+      ctx.lineTo(20, -15);
+      ctx.moveTo(-15, 10);
+      ctx.lineTo(15, 10);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Curved Demonic Obsidian Horns
+      ctx.strokeStyle = '#450a0a';
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(-m.radius * 0.6, -m.radius * 0.4);
+      ctx.lineTo(-m.radius * 1.3, -m.radius * 1.2);
+      ctx.lineTo(-m.radius * 0.9, -m.radius * 1.5);
+      ctx.moveTo(m.radius * 0.6, -m.radius * 0.4);
+      ctx.lineTo(m.radius * 1.3, -m.radius * 1.2);
+      ctx.lineTo(m.radius * 0.9, -m.radius * 1.5);
       ctx.stroke();
 
-      // Enormous horned crowns
-      ctx.strokeStyle = '#ff6666';
-      ctx.lineWidth = 6;
+      // Fiery glowing eyes
+      ctx.fillStyle = '#fef08a';
       ctx.beginPath();
-      ctx.moveTo(-m.radius * 0.7, -m.radius * 0.5);
-      ctx.lineTo(-m.radius * 1.3, -m.radius * 1.2);
-      ctx.moveTo(m.radius * 0.7, -m.radius * 0.5);
-      ctx.lineTo(m.radius * 1.3, -m.radius * 1.2);
-      ctx.stroke();
+      ctx.arc(-14, -12, 5, 0, Math.PI * 2);
+      ctx.arc(14, -12, 5, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     ctx.restore();
 
     // Monster Health Bar
-    const barWidth = m.isBoss ? 110 : 36;
-    const barHeight = m.isBoss ? 8 : 4;
+    const barWidth = m.isBoss ? 130 : 42;
+    const barHeight = m.isBoss ? 9 : 5;
     const barX = m.x - barWidth / 2;
-    const barY = m.y - m.radius - (m.isBoss ? 20 : 12);
+    const barY = m.y - m.radius - (m.isBoss ? 26 : 14);
     const hpRatio = Math.max(0, m.hp / m.maxHp);
 
-    ctx.fillStyle = '#111111';
+    // Frame
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
     ctx.fillRect(barX - 1, barY - 1, barWidth + 2, barHeight + 2);
 
-    const hpColor = hpRatio > 0.5 ? '#00ff88' : hpRatio > 0.25 ? '#ffcc00' : '#ff3333';
+    // Fill
+    const hpColor = hpRatio > 0.5 ? '#22c55e' : hpRatio > 0.25 ? '#eab308' : '#ef4444';
     ctx.fillStyle = hpColor;
     ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
 
     if (m.isBoss) {
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 11px sans-serif';
+      ctx.font = 'bold 12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`${m.name}: ${m.hp}/${m.maxHp}`, m.x, barY - 5);
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 4;
+      ctx.fillText(`👑 ${m.name} [${m.hp} / ${m.maxHp}]`, m.x, barY - 6);
+      ctx.shadowBlur = 0;
     }
   }
 
@@ -289,53 +487,55 @@ export class GameRenderer {
     }
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
   }
 
   drawBlockMatrix(ctx, world, inputManager) {
     ctx.save();
 
-    // Matrix container box
     const matrixW = GRID_COLS * (GRID_CELL_SIZE + GRID_GAP) + GRID_GAP;
     const matrixH = GRID_ROWS * (GRID_CELL_SIZE + GRID_GAP) + GRID_GAP;
-    ctx.fillStyle = '#10141d';
-    ctx.strokeStyle = '#1f2633';
-    ctx.lineWidth = 2;
-    this.roundRect(ctx, GRID_ORIGIN_X - 15, GRID_ORIGIN_Y - 35, matrixW + 30, matrixH + 50, 14, true, true);
 
-    // Matrix Header
-    ctx.fillStyle = '#00d2ff';
-    ctx.font = 'bold 14px sans-serif';
+    // Outer Obsidian Frame with Chamfered Gold Rim
+    ctx.fillStyle = '#0f172a';
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 3;
+    this.roundRect(ctx, GRID_ORIGIN_X - 16, GRID_ORIGIN_Y - 38, matrixW + 32, matrixH + 54, 16, true, true);
+
+    // Matrix Title
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 15px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('TACTICAL GEM MATRIX (8×8)', GRID_ORIGIN_X - 5, GRID_ORIGIN_Y - 14);
+    ctx.fillText('💎 TACTICAL GEM MATRIX (8×8)', GRID_ORIGIN_X - 6, GRID_ORIGIN_Y - 16);
 
     if (world.combo > 1) {
-      ctx.fillStyle = '#ffcc00';
-      ctx.font = 'bold 13px sans-serif';
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 14px sans-serif';
       ctx.textAlign = 'right';
-      ctx.fillText(`⚡ COMBO STREAK x${world.combo}!`, GRID_ORIGIN_X + matrixW + 5, GRID_ORIGIN_Y - 14);
+      ctx.fillText(`⚡ COMBO STREAK x${world.combo}!`, GRID_ORIGIN_X + matrixW + 6, GRID_ORIGIN_Y - 16);
     }
 
-    // Grid Slots & Gems
+    // Grid Slots & Placed Gems
     for (let r = 0; r < GRID_ROWS; r++) {
       for (let c = 0; c < GRID_COLS; c++) {
         const cellX = GRID_ORIGIN_X + c * (GRID_CELL_SIZE + GRID_GAP);
         const cellY = GRID_ORIGIN_Y + r * (GRID_CELL_SIZE + GRID_GAP);
 
-        // Sunken dark tile slot
-        ctx.fillStyle = '#171c26';
-        ctx.strokeStyle = '#222938';
-        ctx.lineWidth = 1.5;
+        // Sunken beveled slot
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 2;
         this.roundRect(ctx, cellX, cellY, GRID_CELL_SIZE, GRID_CELL_SIZE, 8, true, true);
 
         // Placed Gem
         const cellData = world.grid[r][c];
         if (cellData) {
-          this.drawGlossyGem(ctx, cellX, cellY, GRID_CELL_SIZE, cellData.gemType);
+          this.drawVolumetricGem(ctx, cellX, cellY, GRID_CELL_SIZE, cellData.gemType);
         }
       }
     }
 
-    // Hover / Placement Ghost Highlight
+    // Hover Ghost Preview
     if (inputManager) {
       const activePieceIdx = inputManager.draggedPieceIndex >= 0
         ? inputManager.draggedPieceIndex
@@ -358,9 +558,9 @@ export class GameRenderer {
 
   drawPlacementGhost(ctx, piece, startCol, startRow, canFit) {
     ctx.save();
-    ctx.fillStyle = canFit ? 'rgba(0, 255, 136, 0.4)' : 'rgba(255, 51, 51, 0.4)';
-    ctx.strokeStyle = canFit ? '#00ff88' : '#ff3333';
-    ctx.lineWidth = 2;
+    ctx.fillStyle = canFit ? 'rgba(34, 197, 94, 0.45)' : 'rgba(239, 68, 68, 0.45)';
+    ctx.strokeStyle = canFit ? '#22c55e' : '#ef4444';
+    ctx.lineWidth = 2.5;
 
     for (let r = 0; r < piece.rows; r++) {
       for (let c = 0; c < piece.cols; c++) {
@@ -378,32 +578,48 @@ export class GameRenderer {
     ctx.restore();
   }
 
-  drawGlossyGem(ctx, x, y, size, gemType) {
+  drawVolumetricGem(ctx, x, y, size, gemType) {
     ctx.save();
 
-    // Outer soft glow
+    // Vibrant Glow
     ctx.shadowColor = gemType.glow;
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 12;
 
-    // Base Gem Body Gradient
-    const grad = ctx.createLinearGradient(x, y, x, y + size);
+    // Base Gem Body with High-Contrast Jewel Gradient
+    const grad = ctx.createLinearGradient(x, y, x + size, y + size);
     grad.addColorStop(0, gemType.light);
     grad.addColorStop(0.35, gemType.color);
     grad.addColorStop(1, gemType.dark);
     ctx.fillStyle = grad;
     this.roundRect(ctx, x, y, size, size, 8, true, false);
 
-    // Glossy top glass highlight
-    const highlight = ctx.createLinearGradient(x, y, x, y + size * 0.45);
-    highlight.addColorStop(0, 'rgba(255, 255, 255, 0.65)');
-    highlight.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
-    ctx.fillStyle = highlight;
-    this.roundRect(ctx, x + 3, y + 2, size - 6, size * 0.42, 6, true, false);
-
-    // Inner subtle jewel facet border
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 1;
+    // Jewel Facet Bevel Border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 1.5;
     this.roundRect(ctx, x + 2, y + 2, size - 4, size - 4, 6, false, true);
+
+    // Specular Glass Reflection on upper half
+    const highlight = ctx.createLinearGradient(x, y, x, y + size * 0.48);
+    highlight.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+    highlight.addColorStop(0.7, 'rgba(255, 255, 255, 0.2)');
+    highlight.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+    ctx.fillStyle = highlight;
+    this.roundRect(ctx, x + 4, y + 3, size - 8, size * 0.42, 5, true, false);
+
+    // Star Sparkle in top-left
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x + 10, y + 10, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Central Rune / Elemental Icon
+    if (gemType.icon) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.font = `bold ${Math.round(size * 0.4)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(gemType.icon, x + size / 2, y + size / 2 + 2);
+    }
 
     ctx.restore();
   }
@@ -420,21 +636,22 @@ export class GameRenderer {
     for (let i = 0; i < 3; i++) {
       const piece = world.tray[i];
       const slotX = trayStartX + i * (slotW + gap);
-
-      // Slot Background card
       const isSelected = inputManager && inputManager.selectedPieceIndex === i;
-      ctx.fillStyle = isSelected ? 'rgba(0, 210, 255, 0.12)' : '#10141d';
-      ctx.strokeStyle = isSelected ? '#00d2ff' : '#1f2633';
+
+      // Card frame
+      ctx.fillStyle = isSelected ? 'rgba(56, 189, 248, 0.18)' : '#0f172a';
+      ctx.strokeStyle = isSelected ? '#38bdf8' : '#334155';
       ctx.lineWidth = isSelected ? 2.5 : 1.5;
-      this.roundRect(ctx, slotX, trayY, slotW, slotH, 10, true, true);
+      this.roundRect(ctx, slotX, trayY, slotW, slotH, 12, true, true);
 
-      // Card number badge [1], [2], [3]
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.font = 'bold 11px sans-serif';
+      // Card index badge [1], [2], [3]
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.font = 'bold 12px sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText(`[${i + 1}]`, slotX + 8, trayY + 16);
+      ctx.textBaseline = 'top';
+      ctx.fillText(`[${i + 1}]`, slotX + 8, trayY + 8);
 
-      // Draw Piece inside slot if not placed and not currently being dragged
+      // Draw Piece inside slot if not placed and not dragged
       if (piece && !piece.placed && (!inputManager || inputManager.draggedPieceIndex !== i)) {
         const cellSize = 22;
         const pieceW = piece.cols * cellSize;
@@ -447,7 +664,7 @@ export class GameRenderer {
             if (piece.shape[r][c] === 1) {
               const px = offsetX + c * cellSize;
               const py = offsetY + r * cellSize;
-              this.drawGlossyGem(ctx, px, py, cellSize - 2, piece.gemType);
+              this.drawVolumetricGem(ctx, px, py, cellSize - 2, piece.gemType);
             }
           }
         }
@@ -471,7 +688,7 @@ export class GameRenderer {
         if (piece.shape[r][c] === 1) {
           const px = mx + c * (cellSize + GRID_GAP);
           const py = my + r * (cellSize + GRID_GAP);
-          this.drawGlossyGem(ctx, px, py, cellSize, piece.gemType);
+          this.drawVolumetricGem(ctx, px, py, cellSize, piece.gemType);
         }
       }
     }
@@ -481,62 +698,63 @@ export class GameRenderer {
   drawHeaderHud(ctx, world, bestScore) {
     ctx.save();
 
-    // Top Header Background Ribbon
-    ctx.fillStyle = '#0a0d13';
+    // Dark sleek navigation ribbon
+    ctx.fillStyle = '#0a0f1d';
     ctx.fillRect(0, 0, CANVAS_WIDTH, 68);
-    ctx.strokeStyle = '#1b2330';
+    ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, 68);
     ctx.lineTo(CANVAS_WIDTH, 68);
     ctx.stroke();
 
-    // Left: Hearts / Sanctum Gate Lives
+    // Left: Hearts (6 Hearts)
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 15px sans-serif';
+    ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('SANCTUM CORE:', 25, 40);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SANCTUM:', 25, 34);
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       ctx.font = '24px sans-serif';
       if (i < world.lives) {
-        ctx.fillStyle = '#ff2a5f';
-        ctx.shadowColor = '#ff2a5f';
+        ctx.fillStyle = '#f43f5e';
+        ctx.shadowColor = '#f43f5e';
         ctx.shadowBlur = 8;
-        ctx.fillText('♥', 165 + i * 28, 43);
+        ctx.fillText('♥', 125 + i * 26, 36);
       } else {
-        ctx.fillStyle = '#3a4454';
+        ctx.fillStyle = '#334155';
         ctx.shadowBlur = 0;
-        ctx.fillText('♡', 165 + i * 28, 43);
+        ctx.fillText('♡', 125 + i * 26, 36);
       }
     }
     ctx.shadowBlur = 0;
 
-    // Center: Wave Tracker & Difficulty
+    // Center: Wave & Difficulty
     const diff = DIFFICULTIES[world.difficultyIndex];
-    ctx.fillStyle = '#00ff88';
+    ctx.fillStyle = '#22c55e';
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`WAVE ${world.wave}`, CANVAS_WIDTH / 2 - 40, 32);
+    ctx.fillText(`WAVE ${world.wave}`, CANVAS_WIDTH / 2 - 45, 26);
 
-    ctx.fillStyle = '#8b9bb4';
+    ctx.fillStyle = '#94a3b8';
     ctx.font = '12px sans-serif';
-    ctx.fillText(`MODE: ${diff.label}`, CANVAS_WIDTH / 2 - 40, 50);
+    ctx.fillText(`MODE: ${diff.label}`, CANVAS_WIDTH / 2 - 45, 46);
 
-    // Audio status icon [M: Audio]
-    ctx.fillStyle = getAudioMuted() ? '#ff5555' : '#00d2ff';
+    // Audio status icon [M]
+    ctx.fillStyle = getAudioMuted() ? '#ef4444' : '#38bdf8';
     ctx.font = '12px sans-serif';
-    ctx.fillText(getAudioMuted() ? '🔇 MUTED (M)' : '🔊 AUDIO (M)', CANVAS_WIDTH / 2 + 75, 40);
+    ctx.fillText(getAudioMuted() ? '🔇 MUTED (M)' : '🔊 AUDIO (M)', CANVAS_WIDTH / 2 + 75, 36);
 
-    // Right: Score, Best & Energy Shards
+    // Right: Score & Best
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#8b9bb4';
+    ctx.fillStyle = '#94a3b8';
     ctx.font = '11px sans-serif';
-    ctx.fillText(`BEST: ${bestScore.toLocaleString()}`, CANVAS_WIDTH - 25, 26);
+    ctx.fillText(`HIGH SCORE: ${bestScore.toLocaleString()}`, CANVAS_WIDTH - 25, 24);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(`SCORE: ${world.score.toLocaleString()}`, CANVAS_WIDTH - 25, 52);
+    ctx.fillText(`SCORE: ${world.score.toLocaleString()}`, CANVAS_WIDTH - 25, 48);
 
     ctx.restore();
   }
@@ -544,59 +762,60 @@ export class GameRenderer {
   drawTitleScreen(ctx, world, bestScore) {
     ctx.save();
 
-    // Dim backdrop
-    ctx.fillStyle = 'rgba(5, 8, 12, 0.88)';
+    // Dim Backdrop
+    ctx.fillStyle = 'rgba(4, 6, 10, 0.9)';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Title Card Box
-    const boxW = 860;
-    const boxH = 560;
+    // Master Dialog Frame
+    const boxW = 880;
+    const boxH = 580;
     const boxX = (CANVAS_WIDTH - boxW) / 2;
     const boxY = (CANVAS_HEIGHT - boxH) / 2;
 
-    ctx.fillStyle = '#0f141d';
-    ctx.strokeStyle = '#00d2ff';
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = 'rgba(0, 210, 255, 0.4)';
-    ctx.shadowBlur = 20;
-    this.roundRect(ctx, boxX, boxY, boxW, boxH, 16, true, true);
+    ctx.fillStyle = '#0f172a';
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(56, 189, 248, 0.4)';
+    ctx.shadowBlur = 24;
+    this.roundRect(ctx, boxX, boxY, boxW, boxH, 18, true, true);
     ctx.shadowBlur = 0;
 
     // Glowing Title
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
     ctx.fillStyle = '#ffffff';
-    ctx.font = '900 44px sans-serif';
-    ctx.fillText('MONSTERWEAVE', CANVAS_WIDTH / 2, boxY + 70);
+    ctx.font = '900 46px sans-serif';
+    ctx.fillText('MONSTERWEAVE', CANVAS_WIDTH / 2, boxY + 72);
 
-    ctx.fillStyle = '#00d2ff';
+    ctx.fillStyle = '#38bdf8';
     ctx.font = 'bold 20px sans-serif';
-    ctx.fillText('TACTICAL BLOCK ONSLAUGHT', CANVAS_WIDTH / 2, boxY + 105);
+    ctx.fillText('TACTICAL BLOCK ONSLAUGHT', CANVAS_WIDTH / 2, boxY + 108);
 
     // High Score Badge
-    ctx.fillStyle = '#ffcc00';
+    ctx.fillStyle = '#fbbf24';
     ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(`🏆 ALL-TIME HIGH SCORE: ${bestScore.toLocaleString()} PTS`, CANVAS_WIDTH / 2, boxY + 145);
+    ctx.fillText(`🏆 ALL-TIME HIGH SCORE: ${bestScore.toLocaleString()} PTS`, CANVAS_WIDTH / 2, boxY + 146);
 
-    // Strategic Concept Infographic Box
-    const infoY = boxY + 175;
-    ctx.fillStyle = '#161c28';
-    ctx.strokeStyle = '#232d3f';
+    // Strategic Concept Card
+    const infoY = boxY + 172;
+    ctx.fillStyle = '#1e293b';
+    ctx.strokeStyle = '#334155';
     ctx.lineWidth = 1.5;
-    this.roundRect(ctx, boxX + 40, infoY, boxW - 80, 165, 12, true, true);
+    this.roundRect(ctx, boxX + 40, infoY, boxW - 80, 180, 12, true, true);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText('⚔️ DUAL TACTICAL BATTLEFIELD ⚔️', CANVAS_WIDTH / 2, infoY + 30);
+    ctx.fillText('⚔️ COMBAT & BLOCK DEFENSE RULES ⚔️', CANVAS_WIDTH / 2, infoY + 30);
 
-    ctx.fillStyle = '#8fa3bf';
+    ctx.fillStyle = '#94a3b8';
     ctx.font = '14px sans-serif';
-    ctx.fillText('1. Place polyomino gem blocks onto the 8×8 Matrix on the right.', CANVAS_WIDTH / 2, infoY + 60);
-    ctx.fillText('2. Complete Rows & Columns to trigger elemental BLOCK BLASTS!', CANVAS_WIDTH / 2, infoY + 85);
-    ctx.fillText('3. Each blast launches high-damage laser artillery into incoming monster swarms.', CANVAS_WIDTH / 2, infoY + 110);
-    ctx.fillText('4. Defend your 4 Sanctum Hearts through 10 escalating waves & slay The Dread Titan!', CANVAS_WIDTH / 2, infoY + 135);
+    ctx.fillText('1. Place polyomino gem blocks onto the 8×8 Matrix to defend the Sanctum.', CANVAS_WIDTH / 2, infoY + 62);
+    ctx.fillText('2. Placing ANY piece fires gem energy darts to push back incoming monsters.', CANVAS_WIDTH / 2, infoY + 90);
+    ctx.fillText('3. Complete Rows & Columns to unleash CATASTROPHIC LASER SALVOS!', CANVAS_WIDTH / 2, infoY + 118);
+    ctx.fillText('4. Defend your 6 Hearts & Sanctum Barrier across 10 waves to defeat The Titan!', CANVAS_WIDTH / 2, infoY + 146);
 
     // Difficulty Selectors
-    const diffY = boxY + 370;
+    const diffY = boxY + 385;
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 14px sans-serif';
     ctx.fillText('SELECT DIFFICULTY:', CANVAS_WIDTH / 2, diffY);
@@ -604,37 +823,37 @@ export class GameRenderer {
     DIFFICULTIES.forEach((d, i) => {
       const btnX = CANVAS_WIDTH / 2 - 190 + i * 130;
       const isCur = world.difficultyIndex === i;
-      ctx.fillStyle = isCur ? 'rgba(0, 210, 255, 0.25)' : '#161c28';
-      ctx.strokeStyle = isCur ? '#00d2ff' : '#2a3547';
+      ctx.fillStyle = isCur ? 'rgba(56, 189, 248, 0.25)' : '#1e293b';
+      ctx.strokeStyle = isCur ? '#38bdf8' : '#334155';
       ctx.lineWidth = isCur ? 2 : 1;
       this.roundRect(ctx, btnX, diffY + 12, 115, 36, 8, true, true);
 
-      ctx.fillStyle = isCur ? '#00d2ff' : '#8fa3bf';
+      ctx.fillStyle = isCur ? '#38bdf8' : '#94a3b8';
       ctx.font = 'bold 13px sans-serif';
       ctx.fillText(d.label, btnX + 57, diffY + 35);
     });
 
     // Start Button
-    const btnY = boxY + 465;
-    const sGrad = ctx.createLinearGradient(0, btnY, 0, btnY + 54);
-    sGrad.addColorStop(0, '#00e1d9');
-    sGrad.addColorStop(1, '#008ba3');
+    const btnY = boxY + 480;
+    const sGrad = ctx.createLinearGradient(0, btnY, 0, btnY + 56);
+    sGrad.addColorStop(0, '#06b6d4');
+    sGrad.addColorStop(1, '#0e7490');
     ctx.fillStyle = sGrad;
-    ctx.shadowColor = '#00e1d9';
+    ctx.shadowColor = '#06b6d4';
     ctx.shadowBlur = 18;
-    this.roundRect(ctx, CANVAS_WIDTH / 2 - 180, btnY, 360, 54, 12, true, false);
+    this.roundRect(ctx, CANVAS_WIDTH / 2 - 190, btnY, 380, 56, 14, true, false);
     ctx.shadowBlur = 0;
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 20px sans-serif';
-    ctx.fillText('COMMENCE DEFENSE [CLICK / ENTER]', CANVAS_WIDTH / 2, btnY + 34);
+    ctx.fillText('COMMENCE DEFENSE [CLICK / ENTER]', CANVAS_WIDTH / 2, btnY + 36);
 
     ctx.restore();
   }
 
   drawPauseScreen(ctx) {
     ctx.save();
-    ctx.fillStyle = 'rgba(5, 8, 12, 0.75)';
+    ctx.fillStyle = 'rgba(4, 6, 10, 0.8)';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     ctx.fillStyle = '#ffffff';
@@ -642,7 +861,7 @@ export class GameRenderer {
     ctx.textAlign = 'center';
     ctx.fillText('PAUSED', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 20);
 
-    ctx.fillStyle = '#00d2ff';
+    ctx.fillStyle = '#38bdf8';
     ctx.font = '18px sans-serif';
     ctx.fillText('PRESS [P] OR [SPACE] TO RESUME', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 25);
     ctx.restore();
@@ -650,24 +869,24 @@ export class GameRenderer {
 
   drawEndScreen(ctx, world, isVictory, bestScore) {
     ctx.save();
-    ctx.fillStyle = 'rgba(5, 8, 12, 0.9)';
+    ctx.fillStyle = 'rgba(4, 6, 10, 0.92)';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     const boxW = 760;
-    const boxH = 540;
+    const boxH = 550;
     const boxX = (CANVAS_WIDTH - boxW) / 2;
     const boxY = (CANVAS_HEIGHT - boxH) / 2;
 
-    ctx.fillStyle = '#0f141d';
-    ctx.strokeStyle = isVictory ? '#00ff88' : '#ff3366';
+    ctx.fillStyle = '#0f172a';
+    ctx.strokeStyle = isVictory ? '#22c55e' : '#f43f5e';
     ctx.lineWidth = 3;
-    ctx.shadowColor = isVictory ? 'rgba(0, 255, 136, 0.4)' : 'rgba(255, 51, 102, 0.4)';
+    ctx.shadowColor = isVictory ? 'rgba(34, 197, 94, 0.4)' : 'rgba(244, 63, 94, 0.4)';
     ctx.shadowBlur = 25;
-    this.roundRect(ctx, boxX, boxY, boxW, boxH, 16, true, true);
+    this.roundRect(ctx, boxX, boxY, boxW, boxH, 18, true, true);
     ctx.shadowBlur = 0;
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = isVictory ? '#00ff88' : '#ff3366';
+    ctx.fillStyle = isVictory ? '#22c55e' : '#f43f5e';
     ctx.font = 'bold 34px sans-serif';
     ctx.fillText(
       isVictory ? '🎉 SANCTUM PRESERVED — VICTORY! 🎉' : '💀 MISSION TERMINATED — SANCTUM BREACHED',
@@ -675,21 +894,18 @@ export class GameRenderer {
       boxY + 65
     );
 
-    // Final Score
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 40px sans-serif';
-    ctx.fillText(`${world.score.toLocaleString()} PTS`, CANVAS_WIDTH / 2, boxY + 125);
+    ctx.font = 'bold 42px sans-serif';
+    ctx.fillText(`${world.score.toLocaleString()} PTS`, CANVAS_WIDTH / 2, boxY + 128);
 
-    // Rating Badge (S-RANK / A-RANK / B-RANK)
     const rating = world.score > 60000 ? 'S-RANK' : world.score > 35000 ? 'A-RANK' : 'B-RANK';
-    ctx.fillStyle = rating === 'S-RANK' ? '#ffcc00' : '#00d2ff';
+    ctx.fillStyle = rating === 'S-RANK' ? '#fbbf24' : '#38bdf8';
     ctx.font = 'bold 22px sans-serif';
-    ctx.fillText(`DEFENSE RATING: ${rating}`, CANVAS_WIDTH / 2, boxY + 165);
+    ctx.fillText(`DEFENSE RATING: ${rating}`, CANVAS_WIDTH / 2, boxY + 168);
 
-    // Stats Table Grid
     const statY = boxY + 205;
-    ctx.fillStyle = '#161c28';
-    this.roundRect(ctx, boxX + 60, statY, boxW - 120, 190, 12, true, false);
+    ctx.fillStyle = '#1e293b';
+    this.roundRect(ctx, boxX + 60, statY, boxW - 120, 195, 12, true, false);
 
     const statsList = [
       { label: 'WAVES COMPLETED:', val: `${world.stats.wavesCleared} / 10` },
@@ -700,8 +916,8 @@ export class GameRenderer {
     ];
 
     statsList.forEach((s, idx) => {
-      const sy = statY + 34 + idx * 32;
-      ctx.fillStyle = '#8fa3bf';
+      const sy = statY + 34 + idx * 33;
+      ctx.fillStyle = '#94a3b8';
       ctx.font = '15px sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(s.label, boxX + 90, sy);
@@ -712,13 +928,12 @@ export class GameRenderer {
       ctx.fillText(s.val, boxX + boxW - 90, sy);
     });
 
-    // Play Again Button
-    const btnY = boxY + 440;
+    const btnY = boxY + 445;
     const rGrad = ctx.createLinearGradient(0, btnY, 0, btnY + 54);
-    rGrad.addColorStop(0, '#00d2ff');
-    rGrad.addColorStop(1, '#006699');
+    rGrad.addColorStop(0, '#38bdf8');
+    rGrad.addColorStop(1, '#0284c7');
     ctx.fillStyle = rGrad;
-    ctx.shadowColor = '#00d2ff';
+    ctx.shadowColor = '#38bdf8';
     ctx.shadowBlur = 15;
     this.roundRect(ctx, CANVAS_WIDTH / 2 - 160, btnY, 320, 54, 12, true, false);
     ctx.shadowBlur = 0;

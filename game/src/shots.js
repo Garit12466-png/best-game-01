@@ -1,15 +1,16 @@
 // MONSTERWEAVE — Deterministic Screenshot Scene Staging for AI Judge & Scorer
 
 import {
-  SCREEN_TITLE, SCREEN_PLAY, SCREEN_OVER, SCREEN_VICTORY,
-  GRID_COLS, GRID_ROWS, GEM_TYPES, LANES
+  SCREEN_TITLE, SCREEN_PLAY, SCREEN_VICTORY,
+  GRID_COLS, GRID_ROWS, GEM_TYPES
 } from './config.js';
 import { createMonster } from './monsters.js';
 
 export function stageSceneForScreenshot(shotName, world) {
   if (shotName === 'start') {
     world.score = 0;
-    world.lives = 4;
+    world.lives = 6;
+    world.shield = 100;
     return {
       screen: SCREEN_TITLE,
       best: 95200
@@ -18,7 +19,8 @@ export function stageSceneForScreenshot(shotName, world) {
 
   if (shotName === 'play') {
     world.score = 46121;
-    world.lives = 4;
+    world.lives = 6;
+    world.shield = 100;
     world.wave = 3;
     world.combo = 2;
 
@@ -44,10 +46,10 @@ export function stageSceneForScreenshot(shotName, world) {
       createMonster('GARGOYLE', 1, 3),
       createMonster('GOLEM', 2, 3)
     ];
-    world.monsters[0].y = 480;
-    world.monsters[1].y = 350;
-    world.monsters[2].y = 280;
-    world.monsters[3].y = 190;
+    world.monsters[0].y = 440;
+    world.monsters[1].y = 330;
+    world.monsters[2].y = 260;
+    world.monsters[3].y = 170;
 
     return {
       screen: SCREEN_PLAY,
@@ -57,7 +59,8 @@ export function stageSceneForScreenshot(shotName, world) {
 
   if (shotName === 'blast') {
     world.score = 72400;
-    world.lives = 4;
+    world.lives = 6;
+    world.shield = 85;
     world.wave = 5; // Boss Wave
     world.combo = 3;
 
@@ -71,24 +74,24 @@ export function stageSceneForScreenshot(shotName, world) {
 
     // Spawn Titan Boss and gargoyles
     const titan = createMonster('TITAN', 1, 5);
-    titan.y = 320;
-    titan.hp = 1150;
+    titan.y = 300;
+    titan.hp = 880;
 
     const beetle = createMonster('BEETLE', 0, 5);
-    beetle.y = 490;
+    beetle.y = 450;
 
     const gargoyle = createMonster('GARGOYLE', 2, 5);
-    gargoyle.y = 220;
+    gargoyle.y = 200;
 
     world.monsters = [titan, beetle, gargoyle];
 
     // Trigger explosive visual lasers across to titan
-    world.particles.spawnLaserBeam(660, 380, titan.x, titan.y - 10, '#ff3366');
+    world.particles.spawnLaserBeam(660, 380, titan.x, titan.y - 10, '#ff2d55');
     world.particles.spawnLaserBeam(660, 420, titan.x, titan.y + 15, '#00d2ff');
-    world.particles.spawnExplosion(titan.x, titan.y, '#ffcc00', 45, 180);
+    world.particles.spawnExplosion(titan.x, titan.y, '#ffb300', 45, 180);
 
-    world.particles.addFloatingText(titan.x, titan.y - 45, 'CRIT! 2,400', '#ffcc00', 28, true);
-    world.particles.addFloatingText(titan.x + 40, titan.y + 10, 'DOUBLE BLAST!', '#ff3366', 22, true);
+    world.particles.addFloatingText(titan.x, titan.y - 45, 'CRIT! 2,400', '#ffb300', 28, true);
+    world.particles.addFloatingText(titan.x + 40, titan.y + 10, 'DOUBLE BLAST!', '#ff2d55', 22, true);
     world.particles.addFloatingText(beetle.x, beetle.y - 20, '1,200', '#00d2ff', 20, false);
 
     return {

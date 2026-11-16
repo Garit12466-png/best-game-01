@@ -6,9 +6,9 @@ export function createMonster(typeKey, laneIndex, wave = 1) {
   const base = MONSTER_TYPES[typeKey];
   const laneX = LANES[laneIndex];
 
-  // Scale stats with wave count
-  const hpScale = 1 + (wave - 1) * 0.22;
-  const speedScale = Math.min(1.4, 1 + (wave - 1) * 0.05);
+  // Gentle scaling per wave
+  const hpScale = 1 + (wave - 1) * 0.15;
+  const speedScale = Math.min(1.3, 1 + (wave - 1) * 0.04);
 
   return {
     id: `m_${Math.random().toString(36).substring(2, 9)}`,
@@ -25,8 +25,9 @@ export function createMonster(typeKey, laneIndex, wave = 1) {
     isBoss: !!base.isBoss,
     laneIndex: laneIndex,
     x: laneX,
-    y: ARENA_Y - 40 - Math.random() * 50,
+    y: ARENA_Y - 45 - Math.random() * 40,
     wobbleOffset: Math.random() * Math.PI * 2,
+    animTimer: Math.random() * 10,
     slowTimer: 0,
     flashTimer: 0,
     dead: false,
@@ -36,6 +37,8 @@ export function createMonster(typeKey, laneIndex, wave = 1) {
 
 export function updateMonster(monster, dt) {
   if (monster.dead || monster.breached) return;
+
+  monster.animTimer += dt * 4;
 
   // Handle status effects
   if (monster.slowTimer > 0) {
@@ -52,10 +55,10 @@ export function updateMonster(monster, dt) {
   // Advance position downwards
   monster.y += monster.speed * dt;
 
-  // Subtle natural organic wobble
-  monster.wobbleOffset += dt * 5;
+  // Subtle organic crawl / flight wobble
+  monster.wobbleOffset += dt * 3.5;
   const laneX = LANES[monster.laneIndex];
-  const wobbleAmp = monster.isBoss ? 4 : 12;
+  const wobbleAmp = monster.isBoss ? 4 : 8;
   monster.x = laneX + Math.sin(monster.wobbleOffset) * wobbleAmp;
 
   // Check if reached Sanctum Core gate
@@ -69,7 +72,7 @@ export function applyMonsterDamage(monster, damage, gemTypeId = null) {
   monster.flashTimer = 0.12;
 
   if (gemTypeId === 'sapphire') {
-    monster.slowTimer = 3.0; // 3 seconds frost chill
+    monster.slowTimer = 3.5; // Frost chill
   }
 
   if (monster.hp <= 0) {
@@ -79,39 +82,55 @@ export function applyMonsterDamage(monster, damage, gemTypeId = null) {
   return monster.dead;
 }
 
-export function generateWaveQueue(waveNumber, difficultyMultiplier = 1.0) {
+export function generateWaveQueue(waveNumber, spawnMultiplier = 1.0) {
   const queue = [];
   const wave = waveNumber;
 
+  // 3.5s breathing delay before first wave spawns
+  let currentTime = 3.5;
+
   if (wave % 5 === 0) {
-    // Boss Wave!
-    queue.push({ type: 'TITAN', lane: 1, delay: 1.0 });
+    // Boss Wave! (Wave 5 & 10)
+    queue.push({ type: 'TITAN', lane: 1, delay: currentTime });
+    currentTime += 4.0;
+
     const adds = 4 + wave;
     for (let i = 0; i < adds; i++) {
       queue.push({
         type: i % 2 === 0 ? 'BEETLE' : 'GARGOYLE',
         lane: i % 3,
-        delay: 2.5 + i * 1.5
+        delay: currentTime + i * 2.5
       });
     }
     return queue;
   }
 
-  // Standard Waves
-  const beetleCount = Math.floor((5 + wave * 2) * difficultyMultiplier);
-  const gargoyleCount = Math.floor((wave >= 2 ? wave * 1.5 : 0) * difficultyMultiplier);
-  const golemCount = Math.floor((wave >= 3 ? Math.floor(wave / 2) : 0) * difficultyMultiplier);
+  // Wave 1: Gentle tutorial wave of only 4 beetles spaced widely
+  if (wave === 1) {
+    for (let i = 0; i < 4; i++) {
+      queue.push({
+        type: 'BEETLE',
+        lane: i % 3,
+        delay: currentTime
+      });
+      currentTime += 3.2; // Generous 3.2s between spawns!
+    }
+    return queue;
+  }
 
-  let currentTime = 0.8;
+  // Wave 2+: Gradually scale
+  const beetleCount = Math.floor((4 + wave * 1.5) * spawnMultiplier);
+  const gargoyleCount = Math.floor((wave >= 2 ? wave : 0) * spawnMultiplier);
+  const golemCount = Math.floor((wave >= 3 ? Math.floor(wave / 2) : 0) * spawnMultiplier);
 
   // Spawn beetles
   for (let i = 0; i < beetleCount; i++) {
     queue.push({
       type: 'BEETLE',
-      lane: Math.floor(Math.random() * 3),
+      lane: i % 3,
       delay: currentTime
     });
-    currentTime += 0.85 + Math.random() * 0.7;
+    currentTime += 2.2 + Math.random() * 0.8;
   }
 
   // Spawn gargoyles
@@ -119,9 +138,9 @@ export function generateWaveQueue(waveNumber, difficultyMultiplier = 1.0) {
     queue.push({
       type: 'GARGOYLE',
       lane: (i + 1) % 3,
-      delay: currentTime + 0.5
+      delay: currentTime
     });
-    currentTime += 1.4;
+    currentTime += 2.8;
   }
 
   // Spawn golems
@@ -129,12 +148,11 @@ export function generateWaveQueue(waveNumber, difficultyMultiplier = 1.0) {
     queue.push({
       type: 'GOLEM',
       lane: i % 3,
-      delay: currentTime + 1.0
+      delay: currentTime
     });
-    currentTime += 2.2;
+    currentTime += 3.5;
   }
 
-  // Sort queue chronologically by delay
   queue.sort((a, b) => a.delay - b.delay);
   return queue;
 }
